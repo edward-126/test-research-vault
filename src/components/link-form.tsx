@@ -1,8 +1,5 @@
 "use client";
 
-import { startTransition, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
-import { LoaderCircle, Plus, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -17,6 +14,9 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { LINK_CATEGORIES, type CreateLinkInput } from "@/lib/types";
 import { cn } from "@/lib/utils";
+import { LoaderCircle, Plus } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { startTransition, useRef, useState } from "react";
 
 type FormState = {
   status: "idle" | "success" | "error";

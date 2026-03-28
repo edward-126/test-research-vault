@@ -1,4 +1,3 @@
-import { ExternalLink, FolderKanban, NotebookPen } from "lucide-react";
 import {
   Card,
   CardContent,
@@ -7,6 +6,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import type { LinkItem } from "@/lib/types";
+import { ExternalLink, FolderKanban } from "lucide-react";
 
 function formatCreatedAt(date: Date) {
   return new Intl.DateTimeFormat("en", {

@@ -1,4 +1,3 @@
-import { Database, GitBranch, Rocket } from "lucide-react";
 import { LinkForm } from "@/components/link-form";
 import { LinkList } from "@/components/link-list";
 import { listLinks } from "@/lib/research-links";
