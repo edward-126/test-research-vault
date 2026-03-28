@@ -12,6 +12,7 @@ function formatCreatedAt(date: Date) {
   return new Intl.DateTimeFormat("en", {
     dateStyle: "medium",
     timeStyle: "short",
+    timeZone: "Asia/Colombo",
   }).format(date);
 }
 
@@ -75,13 +76,13 @@ export function LinkList({
             {links.map((link) => (
               <Card
                 key={link.id}
-                className="hover:bg-primary/2 hover:border-primary/20 transition-all duration-300 ease-in-out"
+                className="hover:bg-primary/2 bg-accent/50 hover:border-primary/20 transition-all duration-300 ease-in-out"
               >
                 <CardContent className="">
                   <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                     <div className="min-w-0 flex-1">
                       <div className="flex flex-wrap items-center gap-2">
-                        <span className="bg-primary/5 border-primary/10 text-primary inline-flex items-center gap-2 rounded-lg border px-2 py-1 text-xs font-semibold">
+                        <span className="bg-primary/5 dark:border-chart-2/10 dark:bg-chart-2/5 border-primary/10 text-primary dark:text-chart-2 inline-flex items-center gap-2 rounded-lg border px-2 py-1 text-xs font-semibold">
                           <FolderKanban className="size-3.5" />
                           {link.category}
                         </span>
@@ -98,7 +99,7 @@ export function LinkList({
                         href={link.url}
                         target="_blank"
                         rel="noreferrer"
-                        className="text-primary hover:text-foreground mt-2 inline-flex max-w-full items-center gap-2 text-sm underline underline-offset-4 transition"
+                        className="text-primary dark:text-chart-2 hover:text-foreground mt-2 inline-flex max-w-full items-center gap-2 text-sm underline underline-offset-4 transition"
                       >
                         <span className="truncate">{link.url}</span>
                         <ExternalLink className="size-3 shrink-0" />
