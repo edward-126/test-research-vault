@@ -1,18 +1,16 @@
-# test-research-vault
+# ResearchVault
 
-A reusable Next.js application created with **Template Next**.
+Sprint 1 MVP for collecting research links with Next.js 16, MongoDB Atlas, and a Vercel-ready setup.
 
 ## Tech Stack
 
-- **Next.js 16** - React framework with App Router
-- **TypeScript** - Type-safe JavaScript
-- **React Compiler** - Enabled in the scaffold
-- **Tailwind CSS** - Utility-first CSS framework
-- **Turbopack** - Fast local development bundler
-- **Shadcn/ui preset `b1YmqvjRA`** - Pre-configured component baseline
-- **AGENTS.md** - Default guidance for coding agents working in the app
-- **next-themes** - Theme switching support
-- **Prettier** - Code formatting with Tailwind plugin
+- **Next.js 16 App Router**
+- **React 19**
+- **MongoDB Atlas**
+- **TypeScript**
+- **Tailwind CSS 4**
+- **React Compiler**
+- **GitHub Actions**
 
 ## Getting Started
 
@@ -23,19 +21,32 @@ A reusable Next.js application created with **Template Next**.
 
 ### Installation
 
-1. Install dependencies:
+1. Copy env values:
+
+```bash
+cp .env.example .env.local
+```
+
+2. Add your MongoDB Atlas connection details to `.env.local`:
+
+```bash
+MONGODB_URI=your-atlas-connection-string
+MONGODB_DB_NAME=research_vault
+```
+
+3. Install dependencies:
 
 ```bash
 npm install
 ```
 
-2. Run the development server:
+4. Run the development server:
 
 ```bash
 npm run dev
 ```
 
-3. Open [http://localhost:3000](http://localhost:3000) in your browser.
+5. Open [http://localhost:3000](http://localhost:3000) in your browser.
 
 ## Project Structure
 
@@ -63,28 +74,21 @@ test-research-vault/
 └── package.json
 ```
 
-## Adding Components
-
-This project uses Shadcn/ui. Add new components:
-
-```bash
-npx shadcn@latest add button
-npx shadcn@latest add card
-npx shadcn@latest add input
-```
-
 ## Available Scripts
 
 - `npm run dev` - Start development server
 - `npm run build` - Build for production
 - `npm run start` - Start production server
 - `npm run lint` - Lint code with ESLint
+- `npm run test` - Run lightweight Node-based tests
 - `npm run format` - Format code with Prettier
 - `npm run format:check` - Check formatting without writing changes
 
-## Contributing
+## Deployment Notes
 
-Created with [Template Next](https://www.npmjs.com/package/@edward-hyde/template-next)
+- Add `MONGODB_URI` and `MONGODB_DB_NAME` to your Vercel project environment variables.
+- The app uses server-side MongoDB access and Server Actions, so no browser-side database secrets are exposed.
+- GitHub Actions runs lint and build checks on pushes and pull requests.
 
 ## License
 
