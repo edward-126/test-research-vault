@@ -18,7 +18,13 @@ export const metadata: Metadata = {
   title: "ResearchVault",
   description:
     "ResearchVault is a Sprint 1 MVP for collecting research links, notes, and categories with Next.js and MongoDB.",
-  keywords: ["ResearchVault", "research links", "Next.js", "MongoDB", "Sprint 1"],
+  keywords: [
+    "ResearchVault",
+    "research links",
+    "Next.js",
+    "MongoDB",
+    "Sprint 1",
+  ],
   authors: [{ name: "Thilina Rathnayaka" }],
 };
 

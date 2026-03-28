@@ -4,7 +4,9 @@ import {
   type LinkCategory,
 } from "./types";
 
-export type CreateLinkFieldErrors = Partial<Record<keyof CreateLinkInput, string>>;
+export type CreateLinkFieldErrors = Partial<
+  Record<keyof CreateLinkInput, string>
+>;
 
 export type NormalizedCreateLinkInput = {
   url: string;

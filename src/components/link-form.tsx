@@ -1,166 +1,260 @@
 "use client";
 
-import { useActionState, useEffect, useRef } from "react";
-import { useFormStatus } from "react-dom";
+import { startTransition, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import { LoaderCircle, Plus, Sparkles } from "lucide-react";
-import { createLinkAction, initialCreateLinkActionState } from "@/app/actions";
 import { Button } from "@/components/ui/button";
-import { LINK_CATEGORIES } from "@/lib/types";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
+import { LINK_CATEGORIES, type CreateLinkInput } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
-function SubmitButton() {
-  const { pending } = useFormStatus();
+type FormState = {
+  status: "idle" | "success" | "error";
+  message: string;
+  fieldErrors: Partial<Record<keyof CreateLinkInput, string>>;
+  values: CreateLinkInput;
+};
 
-  return (
-    <Button
-      type="submit"
-      size="lg"
-      className="w-full justify-center bg-[linear-gradient(135deg,var(--color-primary),var(--color-accent-strong))] text-white shadow-[0_18px_45px_-22px_var(--color-primary-shadow)] hover:opacity-95 sm:w-auto"
-      disabled={pending}
-    >
-      {pending ? (
-        <>
-          <LoaderCircle className="size-4 animate-spin" />
-          Saving...
-        </>
-      ) : (
-        <>
-          <Plus className="size-4" />
-          Save Link
-        </>
-      )}
-    </Button>
-  );
-}
+const initialFormState: FormState = {
+  status: "idle",
+  message: "",
+  fieldErrors: {},
+  values: {
+    url: "",
+    title: "",
+    notes: "",
+    category: "",
+  },
+};
 
 type FieldProps = {
+  htmlFor: string;
   label: string;
   error?: string;
   children: React.ReactNode;
 };
 
-function Field({ label, error, children }: FieldProps) {
+function Field({ htmlFor, label, error, children }: FieldProps) {
   return (
-    <label className="flex flex-col gap-2">
-      <span className="text-sm font-medium text-slate-900 dark:text-slate-100">
-        {label}
-      </span>
+    <div className="flex flex-col gap-2">
+      <Label htmlFor={htmlFor}>{label}</Label>
       {children}
-      <span
-        className={cn(
-          "min-h-5 text-sm",
-          error ? "text-rose-600 dark:text-rose-400" : "text-transparent"
-        )}
-      >
-        {error ?? "No validation error"}
-      </span>
-    </label>
+      {error ? (
+        <span className="text-sm text-rose-600 dark:text-rose-400">
+          {error}
+        </span>
+      ) : null}
+    </div>
   );
 }
 
-const inputClassName =
-  "w-full rounded-2xl border border-slate-200 bg-white/90 px-4 py-3 text-sm text-slate-900 shadow-sm outline-none transition placeholder:text-slate-400 focus:border-[color:var(--color-primary)] focus:ring-4 focus:ring-[color:var(--color-primary-soft)] dark:border-white/10 dark:bg-slate-950/70 dark:text-slate-50 dark:placeholder:text-slate-500";
-
 export function LinkForm() {
-  const [state, formAction] = useActionState(
-    createLinkAction,
-    initialCreateLinkActionState
+  const [state, setState] = useState<FormState>(initialFormState);
+  const [isPending, setIsPending] = useState(false);
+  const [categoryValue, setCategoryValue] = useState(
+    initialFormState.values.category
   );
   const formRef = useRef<HTMLFormElement>(null);
+  const router = useRouter();
 
-  useEffect(() => {
-    if (state.status === "success") {
+  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    const formData = new FormData(event.currentTarget);
+    const values: CreateLinkInput = {
+      url: String(formData.get("url") ?? ""),
+      title: String(formData.get("title") ?? ""),
+      notes: String(formData.get("notes") ?? ""),
+      category: String(formData.get("category") ?? ""),
+    };
+
+    setIsPending(true);
+
+    try {
+      const response = await fetch("/api/links", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(values),
+      });
+
+      const data = (await response.json()) as {
+        message?: string;
+        fieldErrors?: FormState["fieldErrors"];
+      };
+
+      if (!response.ok) {
+        setState({
+          status: "error",
+          message:
+            data.message ?? "Please fix the highlighted fields and try again.",
+          fieldErrors: data.fieldErrors ?? {},
+          values,
+        });
+        setCategoryValue(values.category);
+        return;
+      }
+
+      setState({
+        ...initialFormState,
+        status: "success",
+        message: data.message ?? "Research link saved to the vault.",
+      });
       formRef.current?.reset();
+      setCategoryValue("");
+      startTransition(() => {
+        router.refresh();
+      });
+    } catch (error) {
+      console.error("Failed to save link from form", error);
+
+      setState({
+        status: "error",
+        message:
+          "The link could not be saved right now. Check your connection and try again.",
+        fieldErrors: {},
+        values,
+      });
+      setCategoryValue(values.category);
+    } finally {
+      setIsPending(false);
     }
-  }, [state.status]);
+  }
+
+  const values = {
+    ...initialFormState.values,
+    ...state.values,
+  };
 
   return (
-    <section className="rounded-[32px] border border-white/60 bg-white/75 p-6 shadow-[0_25px_80px_-35px_rgba(15,23,42,0.35)] backdrop-blur-xl dark:border-white/10 dark:bg-slate-950/65">
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <div className="bg-var(--color-primary-soft) text-var(--color-primary-strong) inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-semibold tracking-[0.2em] uppercase">
-            <Sparkles className="size-3.5" />
-            Sprint 1 MVP
-          </div>
-          <h2 className="mt-4 text-2xl font-semibold tracking-tight text-slate-950 dark:text-slate-50">
-            Capture a research link
-          </h2>
-          <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600 dark:text-slate-300">
-            Save the source, add quick notes, and keep the team&apos;s research
-            vault organized from day one.
-          </p>
-        </div>
-      </div>
+    <Card className="">
+      <CardHeader className="pb-0">
+        <CardTitle className="text-xl font-medium tracking-tight">
+          Capture a research link
+        </CardTitle>
+        <p className="text-muted-foreground max-w-2xl text-sm leading-6">
+          Save the source, add quick notes, and keep the team&apos;s research
+          vault organized from day one.
+        </p>
+      </CardHeader>
 
-      <form ref={formRef} action={formAction} className="mt-8 space-y-5">
-        <Field label="Research URL" error={state.fieldErrors.url}>
-          <input
-            type="url"
-            name="url"
-            placeholder="https://example.com/paper"
-            defaultValue={state.values.url}
-            className={inputClassName}
-            aria-invalid={Boolean(state.fieldErrors.url)}
-          />
-        </Field>
-
-        <div className="grid gap-5 md:grid-cols-2">
-          <Field label="Title" error={state.fieldErrors.title}>
-            <input
-              type="text"
-              name="title"
-              placeholder="Understanding distributed systems"
-              defaultValue={state.values.title}
-              className={inputClassName}
-              aria-invalid={Boolean(state.fieldErrors.title)}
+      <CardContent className="mt-4">
+        <form
+          ref={formRef}
+          onSubmit={handleSubmit}
+          className="flex flex-col items-stretch gap-4"
+        >
+          <input type="hidden" name="category" value={categoryValue} />
+          <Field
+            htmlFor="url"
+            label="Research URL"
+            error={state.fieldErrors.url}
+          >
+            <Input
+              id="url"
+              type="url"
+              name="url"
+              placeholder="https://example.com/paper"
+              defaultValue={values.url}
+              aria-invalid={Boolean(state.fieldErrors.url)}
             />
           </Field>
 
-          <Field label="Category" error={state.fieldErrors.category}>
-            <select
-              name="category"
-              defaultValue={state.values.category}
-              className={inputClassName}
-              aria-invalid={Boolean(state.fieldErrors.category)}
-            >
-              <option value="">Choose a category</option>
-              {LINK_CATEGORIES.map((category) => (
-                <option key={category} value={category}>
-                  {category}
-                </option>
-              ))}
-            </select>
-          </Field>
-        </div>
+          <div className="grid gap-5 md:grid-cols-5">
+            <div className="md:col-span-3">
+              <Field
+                htmlFor="title"
+                label="Title"
+                error={state.fieldErrors.title}
+              >
+                <Input
+                  id="title"
+                  type="text"
+                  name="title"
+                  placeholder="Understanding distributed systems"
+                  defaultValue={values.title}
+                  aria-invalid={Boolean(state.fieldErrors.title)}
+                />
+              </Field>
+            </div>
 
-        <Field label="Notes" error={state.fieldErrors.notes}>
-          <textarea
-            name="notes"
-            rows={5}
-            placeholder="Why is this source useful? Key takeaways, methodology, or critique."
-            defaultValue={state.values.notes}
-            className={cn(inputClassName, "resize-y")}
-          />
-        </Field>
-
-        <div className="flex flex-col gap-3 border-t border-slate-200/80 pt-5 sm:flex-row sm:items-center sm:justify-between dark:border-white/10">
-          <div
-            className={cn(
-              "rounded-2xl px-4 py-3 text-sm",
-              state.status === "success" &&
-                "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300",
-              state.status === "error" &&
-                "bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300",
-              state.status === "idle" &&
-                "bg-slate-100/80 text-slate-500 dark:bg-slate-900 dark:text-slate-400"
-            )}
-          >
-            {state.message ||
-              "Saved links appear instantly in the shared vault."}
+            <div className="md:col-span-2">
+              <Field
+                htmlFor="category"
+                label="Category"
+                error={state.fieldErrors.category}
+              >
+                <Select value={categoryValue} onValueChange={setCategoryValue}>
+                  <SelectTrigger
+                    id="category"
+                    className="w-full"
+                    aria-invalid={Boolean(state.fieldErrors.category)}
+                  >
+                    <SelectValue placeholder="Choose a category" />
+                  </SelectTrigger>
+                  <SelectContent position={"popper"}>
+                    {LINK_CATEGORIES.map((category) => (
+                      <SelectItem key={category} value={category}>
+                        {category}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </Field>
+            </div>
           </div>
-          <SubmitButton />
-        </div>
-      </form>
-    </section>
+
+          <Field htmlFor="notes" label="Notes" error={state.fieldErrors.notes}>
+            <Textarea
+              id="notes"
+              name="notes"
+              rows={5}
+              placeholder="Why is this source useful? Key takeaways, methodology, or critique."
+              defaultValue={values.notes}
+              className="min-h-24 resize-y"
+            />
+          </Field>
+
+          <div className="border-border flex flex-col gap-3 border-t pt-5 sm:flex-row sm:items-center sm:justify-between">
+            <div
+              className={cn(
+                "rounded-lg px-1.5 py-1 text-sm",
+                state.status === "success" &&
+                  "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300",
+                state.status === "error" &&
+                  "bg-destructive/10 text-destructive",
+                state.status === "idle" && "bg-muted text-muted-foreground"
+              )}
+            >
+              {state.message || "Saved links will appear in the shared vault."}
+            </div>
+            <Button type="submit" size="lg" className="" disabled={isPending}>
+              {isPending ? (
+                <>
+                  <LoaderCircle className="animate-spin" />
+                  Saving...
+                </>
+              ) : (
+                <>
+                  <Plus />
+                  Save Link
+                </>
+              )}
+            </Button>
+          </div>
+        </form>
+      </CardContent>
+    </Card>
   );
 }
