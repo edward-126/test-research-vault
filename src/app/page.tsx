@@ -1,115 +1,110 @@
-import Link from "next/link";
-import { ArrowRight, FileCog, Terminal } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Database, GitBranch, Rocket } from "lucide-react";
+import { LinkForm } from "@/components/link-form";
+import { LinkList } from "@/components/link-list";
+import { listLinks } from "@/lib/research-links";
+import type { LinkItem } from "@/lib/types";
 
-const scripts = [
-  { name: "npm run dev", description: "Start the development server." },
-  { name: "npm run build", description: "Create a production build." },
-  {
-    name: "npm run start",
-    description: "Start the production server after building the app.",
-  },
-  { name: "npm run lint", description: "Check the project with ESLint." },
-  { name: "npm run format", description: "Format the codebase with Prettier." },
-  {
-    name: "npm run format:check",
-    description: "Check formatting without writing changes.",
-  },
-];
+export const dynamic = "force-dynamic";
 
-export default function Home() {
+export default async function Home() {
+  let links: LinkItem[] = [];
+  let setupError = "";
+
+  try {
+    links = await listLinks();
+  } catch (error) {
+    console.error("Failed to load research links", error);
+    setupError =
+      error instanceof Error
+        ? error.message
+        : "Unable to connect to MongoDB for the shared vault.";
+  }
+
   return (
-    <section className="flex min-h-dvh w-full">
-      <div className="mx-auto flex w-full max-w-5xl flex-1 flex-col items-center justify-center gap-12 px-4 py-24 md:px-6">
-        <div className="w-full max-w-3xl text-center">
-          <h1 className="text-5xl font-semibold tracking-tight md:text-6xl">
-            Template-NEXT
-          </h1>
+    <section className="relative overflow-hidden">
+      <div className="absolute inset-0 -z-20 bg-[radial-gradient(circle_at_top_left,_rgba(251,191,36,0.32),_transparent_28%),radial-gradient(circle_at_top_right,_rgba(14,165,233,0.28),_transparent_22%),linear-gradient(180deg,_#fffdf8_0%,_#eef6ff_55%,_#f8fafc_100%)] dark:bg-[radial-gradient(circle_at_top_left,_rgba(251,191,36,0.18),_transparent_28%),radial-gradient(circle_at_top_right,_rgba(14,165,233,0.14),_transparent_22%),linear-gradient(180deg,_#020617_0%,_#0f172a_55%,_#111827_100%)]" />
+      <div className="absolute inset-x-0 top-0 -z-10 h-[28rem] bg-[linear-gradient(135deg,rgba(15,23,42,0.04),rgba(15,23,42,0))] dark:bg-[linear-gradient(135deg,rgba(255,255,255,0.06),rgba(255,255,255,0))]" />
 
-          <p className="text-muted-foreground mx-auto mt-4 max-w-2xl text-base leading-7 md:text-lg">
-            <span className="dark:text-chart-3 text-primary font-medium">
-              Your project is ready.
-            </span>{" "}
-            A clean Next.js starter with TypeScript, TailwindCSS, React
-            Compiler, Turbopack, shadcn/ui preset:{" "}
-            <Link
-              href="https://ui.shadcn.com/create?preset=b1YmqvjRA"
-              target="_blank"
-              rel="noreferrer"
-              className="text-foreground hover:text-primary dark:hover:text-chart-3"
-            >
-              b1YmqvjRA
-            </Link>
-            , next-themes, and formatting + linting already configured.
-          </p>
-
-          <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
-            <Button asChild>
-              <Link
-                href="https://blog.thilina.dev/blog/template-next-get-started"
-                target="_blank"
-                rel="noreferrer"
-              >
-                Get Started
-                <ArrowRight className="size-4" />
-              </Link>
-            </Button>
-
-            <Button asChild variant="outline">
-              <Link
-                href="https://blog.thilina.dev/blog/template-next-changelog-4-2"
-                target="_blank"
-                rel="noreferrer"
-              >
-                Changelog
-                <FileCog className="size-4" />
-              </Link>
-            </Button>
-          </div>
-        </div>
-
-        <div className="bg-card text-card-foreground w-full max-w-3xl rounded-lg border">
-          <div className="bg-secondary/35 border-b px-3.5 py-3.5 text-left">
-            <div className="flex items-center gap-2 text-sm font-medium">
-              <Terminal className="size-4" />
-              Available scripts
-            </div>
-            <p className="text-muted-foreground mt-1 text-sm">
-              Handy commands you can use right away.
+      <div className="mx-auto flex min-h-dvh w-full max-w-7xl flex-col gap-10 px-4 py-10 md:px-6 lg:py-14">
+        <section className="grid gap-6 lg:grid-cols-[1.25fr_0.75fr]">
+          <div className="rounded-[36px] border border-white/70 bg-white/70 p-7 shadow-[0_35px_120px_-45px_rgba(15,23,42,0.35)] backdrop-blur-xl dark:border-white/10 dark:bg-slate-950/65 lg:p-10">
+            <p className="text-sm font-semibold uppercase tracking-[0.28em] text-[var(--color-primary-strong)]">
+              Advanced Topics in Software Engineering
             </p>
+            <h1 className="mt-5 max-w-3xl text-4xl font-semibold tracking-tight text-slate-950 sm:text-5xl lg:text-6xl dark:text-slate-50">
+              ResearchVault keeps Sprint 1 focused on the core research capture
+              flow.
+            </h1>
+            <p className="mt-6 max-w-2xl text-base leading-8 text-slate-600 dark:text-slate-300">
+              Build the MVP that matters first: save a source, add a title,
+              keep notes, assign one category, and prove the full stack works
+              with Next.js, MongoDB Atlas, and Vercel-ready configuration.
+            </p>
+
+            <div className="mt-8 grid gap-4 md:grid-cols-3">
+              {[
+                {
+                  icon: Rocket,
+                  title: "Prototype 1",
+                  copy: "A clean, demo-ready MVP centered on one essential workflow.",
+                },
+                {
+                  icon: Database,
+                  title: "Atlas-backed",
+                  copy: "Shared persistence for local development and Vercel deployment.",
+                },
+                {
+                  icon: GitBranch,
+                  title: "Branch-first",
+                  copy: "Built on a dedicated Sprint 1 feature branch for clean PR evidence.",
+                },
+              ].map((item) => (
+                <div
+                  key={item.title}
+                  className="rounded-[28px] border border-slate-200/70 bg-white/85 p-5 dark:border-white/10 dark:bg-slate-900/75"
+                >
+                  <div className="flex size-11 items-center justify-center rounded-2xl bg-[var(--color-primary-soft)] text-[var(--color-primary-strong)]">
+                    <item.icon className="size-5" />
+                  </div>
+                  <h2 className="mt-4 text-lg font-semibold text-slate-950 dark:text-slate-50">
+                    {item.title}
+                  </h2>
+                  <p className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-300">
+                    {item.copy}
+                  </p>
+                </div>
+              ))}
+            </div>
           </div>
 
-          <div className="grid gap-0 sm:grid-cols-2">
-            {scripts.map((script, index) => (
-              <div
-                key={script.name}
-                className={[
-                  "border-b px-3.5 py-3.5 text-left sm:border-r",
-                  index % 2 === 1 ? "sm:border-r-0" : "",
-                  index >= scripts.length - 2 ? "border-b-0" : "",
-                ].join(" ")}
-              >
-                <code className="bg-secondary text-secondary-foreground rounded px-1.5 py-0.5 font-mono text-sm font-medium">
-                  {script.name}
-                </code>
-                <p className="text-muted-foreground mt-1.5 text-sm leading-[120%]">
-                  {script.description}
-                </p>
-              </div>
-            ))}
+          <div className="rounded-[36px] border border-slate-200/70 bg-slate-950 p-7 text-slate-50 shadow-[0_35px_120px_-45px_rgba(15,23,42,0.55)] lg:p-8">
+            <p className="text-sm font-semibold uppercase tracking-[0.24em] text-amber-300">
+              Sprint 1 checklist
+            </p>
+            <div className="mt-6 space-y-4">
+              {[
+                "Create and store a research link in MongoDB Atlas",
+                "Render the shared vault from the server on page load",
+                "Show clear validation and friendly submission feedback",
+                "Keep the project ready for GitHub Actions and Vercel",
+              ].map((item, index) => (
+                <div
+                  key={item}
+                  className="flex items-start gap-4 rounded-[24px] border border-white/10 bg-white/5 px-4 py-4"
+                >
+                  <div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-white/10 text-sm font-semibold text-amber-300">
+                    {index + 1}
+                  </div>
+                  <p className="text-sm leading-6 text-slate-200">{item}</p>
+                </div>
+              ))}
+            </div>
           </div>
-        </div>
+        </section>
 
-        <div className="text-muted-foreground pb-6 text-center text-sm">
-          Developed by{" "}
-          <Link
-            href="https://thilina.dev/"
-            className="text-foreground hover:text-primary font-medium transition-colors"
-            target="_blank"
-            rel="noreferrer"
-          >
-            Thilina R. (A.K.A Edward Hyde)
-          </Link>
+        <div className="grid gap-8 xl:grid-cols-[0.95fr_1.05fr]">
+          <LinkForm />
+          <LinkList links={links} setupError={setupError} />
         </div>
       </div>
     </section>

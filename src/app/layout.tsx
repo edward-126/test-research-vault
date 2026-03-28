@@ -15,18 +15,11 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Template-NEXT",
+  title: "ResearchVault",
   description:
-    "A reusable Next.js starter with TypeScript, Tailwind CSS, React Compiler, Turbopack, shadcn/ui preset b1YmqvjRA, and next-themes.",
-  keywords: [
-    "Next.js",
-    "TypeScript",
-    "Tailwind CSS",
-    "shadcn/ui",
-    "next-themes",
-    "Template",
-  ],
-  authors: [{ name: "Thilina R. (Edward Hyde)", url: "https://thilina.dev" }],
+    "ResearchVault is a Sprint 1 MVP for collecting research links, notes, and categories with Next.js and MongoDB.",
+  keywords: ["ResearchVault", "research links", "Next.js", "MongoDB", "Sprint 1"],
+  authors: [{ name: "Thilina Rathnayaka" }],
 };
 
 export default function RootLayout({
