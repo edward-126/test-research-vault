@@ -108,19 +108,6 @@ These files are primarily responsible for API handling, database connection, per
 - `src/lib/research-links.ts`
 - `src/lib/validation.ts`
 
-### Shared Contract Files
-
-These files are shared between frontend and backend because they define app-wide types or project configuration:
-
-- `src/lib/types.ts`
-- `.env.local`
-- `package.json`
-- `tsconfig.json`
-- `next.config.ts`
-- `eslint.config.mjs`
-- `postcss.config.mjs`
-- `components.json`
-
 ## Available Scripts
 
 - `npm run dev` - Start development server
