@@ -74,13 +74,59 @@ test-research-vault/
 └── package.json
 ```
 
+## Team Ownership Split
+
+### Frontend
+
+**Frontend developers:** Thilina, Ammaar
+
+These files are primarily responsible for UI, layout, styling, client interactions, and presentation:
+
+- `src/app/page.tsx`
+- `src/app/layout.tsx`
+- `src/app/globals.css`
+- `src/app/favicon.ico`
+- `src/components/link-form.tsx`
+- `src/components/link-list.tsx`
+- `src/components/theme-provider.tsx`
+- `src/components/ui/button.tsx`
+- `src/components/ui/card.tsx`
+- `src/components/ui/input.tsx`
+- `src/components/ui/label.tsx`
+- `src/components/ui/select.tsx`
+- `src/components/ui/textarea.tsx`
+- `src/lib/utils.ts`
+
+### Backend
+
+**Backend developer:** Peshala
+
+These files are primarily responsible for API handling, database connection, persistence, validation, and backend data flow:
+
+- `src/app/api/links/route.ts`
+- `src/lib/mongodb.ts`
+- `src/lib/research-links.ts`
+- `src/lib/validation.ts`
+
+### Shared Contract Files
+
+These files are shared between frontend and backend because they define app-wide types or project configuration:
+
+- `src/lib/types.ts`
+- `.env.local`
+- `package.json`
+- `tsconfig.json`
+- `next.config.ts`
+- `eslint.config.mjs`
+- `postcss.config.mjs`
+- `components.json`
+
 ## Available Scripts
 
 - `npm run dev` - Start development server
 - `npm run build` - Build for production
 - `npm run start` - Start production server
 - `npm run lint` - Lint code with ESLint
-- `npm run test` - Run lightweight Node-based tests
 - `npm run format` - Format code with Prettier
 - `npm run format:check` - Check formatting without writing changes
 
