@@ -1,28 +1,23 @@
 "use client";
 
+import {
+  LinkFields,
+  parseTagsInput,
+  type LinkFieldValues,
+} from "@/components/link-fields";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
-import { LINK_CATEGORIES, type CreateLinkInput } from "@/lib/types";
+import type { CreateLinkInput } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { LoaderCircle, Plus } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { startTransition, useRef, useState } from "react";
+import { startTransition, useState } from "react";
 
 type FormState = {
   status: "idle" | "success" | "error";
   message: string;
   fieldErrors: Partial<Record<keyof CreateLinkInput, string>>;
-  values: CreateLinkInput;
+  values: LinkFieldValues;
 };
 
 const initialFormState: FormState = {
@@ -34,48 +29,57 @@ const initialFormState: FormState = {
     title: "",
     notes: "",
     category: "",
+    tagsInput: "",
+    tags: [],
   },
 };
-
-type FieldProps = {
-  htmlFor: string;
-  label: string;
-  error?: string;
-  children: React.ReactNode;
-};
-
-function Field({ htmlFor, label, error, children }: FieldProps) {
-  return (
-    <div className="flex flex-col gap-2">
-      <Label htmlFor={htmlFor}>{label}</Label>
-      {children}
-      {error ? (
-        <span className="text-sm text-rose-600 dark:text-rose-400">
-          {error}
-        </span>
-      ) : null}
-    </div>
-  );
-}
 
 export function LinkForm() {
   const [state, setState] = useState<FormState>(initialFormState);
   const [isPending, setIsPending] = useState(false);
-  const [categoryValue, setCategoryValue] = useState(
-    initialFormState.values.category
-  );
-  const formRef = useRef<HTMLFormElement>(null);
   const router = useRouter();
+
+  function updateValue(field: keyof LinkFieldValues, value: string) {
+    setState((current) => {
+      const nextValues =
+        field === "tagsInput"
+          ? {
+              ...current.values,
+              tagsInput: value,
+              tags: parseTagsInput(value),
+            }
+          : {
+              ...current.values,
+              [field]: value,
+            };
+
+      const nextFieldErrors = { ...current.fieldErrors };
+
+      if (field === "tagsInput") {
+        delete nextFieldErrors.tags;
+      } else {
+        delete nextFieldErrors[field as keyof CreateLinkInput];
+      }
+
+      return {
+        ...current,
+        status: current.status === "success" ? "idle" : current.status,
+        message: current.status === "success" ? "" : current.message,
+        fieldErrors: nextFieldErrors,
+        values: nextValues,
+      };
+    });
+  }
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
-    const formData = new FormData(event.currentTarget);
     const values: CreateLinkInput = {
-      url: String(formData.get("url") ?? ""),
-      title: String(formData.get("title") ?? ""),
-      notes: String(formData.get("notes") ?? ""),
-      category: String(formData.get("category") ?? ""),
+      url: state.values.url,
+      title: state.values.title,
+      notes: state.values.notes,
+      category: state.values.category,
+      tags: state.values.tags,
     };
 
     setIsPending(true);
@@ -95,14 +99,13 @@ export function LinkForm() {
       };
 
       if (!response.ok) {
-        setState({
+        setState((current) => ({
+          ...current,
           status: "error",
           message:
             data.message ?? "Please fix the highlighted fields and try again.",
           fieldErrors: data.fieldErrors ?? {},
-          values,
-        });
-        setCategoryValue(values.category);
+        }));
         return;
       }
 
@@ -111,120 +114,47 @@ export function LinkForm() {
         status: "success",
         message: data.message ?? "Research link saved to the vault.",
       });
-      formRef.current?.reset();
-      setCategoryValue("");
       startTransition(() => {
         router.refresh();
       });
     } catch (error) {
       console.error("Failed to save link from form", error);
 
-      setState({
+      setState((current) => ({
+        ...current,
         status: "error",
         message:
           "The link could not be saved right now. Check your connection and try again.",
         fieldErrors: {},
-        values,
-      });
-      setCategoryValue(values.category);
+      }));
     } finally {
       setIsPending(false);
     }
   }
 
-  const values = {
-    ...initialFormState.values,
-    ...state.values,
-  };
-
   return (
-    <Card className="">
+    <Card>
       <CardHeader className="pb-0">
         <CardTitle className="text-xl font-medium tracking-tight">
           Capture a research link
         </CardTitle>
         <p className="text-muted-foreground max-w-2xl text-sm leading-6">
-          Save the source, add quick notes, and keep the team&apos;s research
-          vault organized from day one.
+          Save the source, add quick notes, tags, and category details so the
+          team can organize research from the start.
         </p>
       </CardHeader>
 
       <CardContent className="mt-4">
         <form
-          ref={formRef}
           onSubmit={handleSubmit}
           className="flex flex-col items-stretch gap-4"
         >
-          <input type="hidden" name="category" value={categoryValue} />
-          <Field
-            htmlFor="url"
-            label="Research URL"
-            error={state.fieldErrors.url}
-          >
-            <Input
-              id="url"
-              type="url"
-              name="url"
-              placeholder="https://example.com/paper"
-              defaultValue={values.url}
-              aria-invalid={Boolean(state.fieldErrors.url)}
-            />
-          </Field>
-
-          <div className="grid gap-5 md:grid-cols-5">
-            <div className="md:col-span-3">
-              <Field
-                htmlFor="title"
-                label="Title"
-                error={state.fieldErrors.title}
-              >
-                <Input
-                  id="title"
-                  type="text"
-                  name="title"
-                  placeholder="Understanding distributed systems"
-                  defaultValue={values.title}
-                  aria-invalid={Boolean(state.fieldErrors.title)}
-                />
-              </Field>
-            </div>
-
-            <div className="md:col-span-2">
-              <Field
-                htmlFor="category"
-                label="Category"
-                error={state.fieldErrors.category}
-              >
-                <Select value={categoryValue} onValueChange={setCategoryValue}>
-                  <SelectTrigger
-                    id="category"
-                    className="w-full"
-                    aria-invalid={Boolean(state.fieldErrors.category)}
-                  >
-                    <SelectValue placeholder="Choose a category" />
-                  </SelectTrigger>
-                  <SelectContent position={"popper"}>
-                    {LINK_CATEGORIES.map((category) => (
-                      <SelectItem key={category} value={category}>
-                        {category}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </Field>
-            </div>
-          </div>
-
-          <Field htmlFor="notes" label="Notes" error={state.fieldErrors.notes}>
-            <Textarea
-              id="notes"
-              name="notes"
-              rows={5}
-              placeholder="Why is this source useful? Key takeaways, methodology, or critique."
-              defaultValue={values.notes}
-              className="min-h-24 resize-y"
-            />
-          </Field>
+          <LinkFields
+            values={state.values}
+            errors={state.fieldErrors}
+            onValueChange={updateValue}
+            onCategoryChange={(value) => updateValue("category", value)}
+          />
 
           <div className="border-border flex flex-col gap-3 border-t pt-5 sm:flex-row sm:items-center sm:justify-between">
             <div
@@ -237,9 +167,10 @@ export function LinkForm() {
                 state.status === "idle" && "bg-muted text-muted-foreground"
               )}
             >
-              {state.message || "Saved links will appear in the shared vault."}
+              {state.message ||
+                "Saved links will appear in the shared vault once they match the current filters."}
             </div>
-            <Button type="submit" size="lg" className="" disabled={isPending}>
+            <Button type="submit" size="lg" disabled={isPending}>
               {isPending ? (
                 <>
                   <LoaderCircle className="animate-spin" />

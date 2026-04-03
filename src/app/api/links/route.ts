@@ -1,13 +1,24 @@
 import { createLink, listLinks } from "@/lib/research-links";
-import type { CreateLinkInput } from "@/lib/types";
-import { validateCreateLinkInput } from "@/lib/validation";
+import type { CreateLinkInput, LinkFilters } from "@/lib/types";
+import { validateLinkInput } from "@/lib/validation";
 
 export const dynamic = "force-dynamic";
 
-export async function GET() {
+function getFilterValue(value: string | string[] | undefined) {
+  return typeof value === "string" ? value : "";
+}
+
+export async function GET(request: Request) {
+  const { searchParams } = new URL(request.url);
+  const filters: LinkFilters = {
+    search: getFilterValue(searchParams.get("search") ?? undefined),
+    category: getFilterValue(searchParams.get("category") ?? undefined),
+    tag: getFilterValue(searchParams.get("tag") ?? undefined),
+  };
+
   try {
-    const links = await listLinks();
-    return Response.json({ links });
+    const links = await listLinks(filters);
+    return Response.json({ links, filters });
   } catch (error) {
     console.error("Failed to load research links", error);
 
@@ -32,9 +43,10 @@ export async function POST(request: Request) {
     title: String(body?.title ?? ""),
     notes: String(body?.notes ?? ""),
     category: String(body?.category ?? ""),
+    tags: Array.isArray(body?.tags) ? body.tags.map((tag) => String(tag)) : [],
   };
 
-  const validation = validateCreateLinkInput(input);
+  const validation = validateLinkInput(input);
 
   if (!validation.data) {
     return Response.json(

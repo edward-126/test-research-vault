@@ -1,37 +1,48 @@
-import {
-  LINK_CATEGORIES,
-  type CreateLinkInput,
-  type LinkCategory,
-} from "./types";
+import { LINK_CATEGORIES, type LinkInput, type LinkCategory } from "./types";
 
-export type CreateLinkFieldErrors = Partial<
-  Record<keyof CreateLinkInput, string>
->;
+export type LinkFieldErrors = Partial<Record<keyof LinkInput, string>>;
 
-export type NormalizedCreateLinkInput = {
+export type NormalizedLinkInput = {
   url: string;
   title: string;
   notes: string;
   category: LinkCategory;
+  tags: string[];
 };
 
-export function normalizeCreateLinkInput(
-  input: CreateLinkInput
-): NormalizedCreateLinkInput {
+function uniqueTags(tags: string[]) {
+  const seen = new Set<string>();
+
+  return tags.filter((tag) => {
+    const normalizedTag = tag.toLocaleLowerCase();
+
+    if (seen.has(normalizedTag)) {
+      return false;
+    }
+
+    seen.add(normalizedTag);
+    return true;
+  });
+}
+
+export function normalizeLinkInput(input: LinkInput): NormalizedLinkInput {
   return {
     url: input.url.trim(),
     title: input.title.trim(),
     notes: input.notes.trim(),
     category: input.category.trim() as LinkCategory,
+    tags: uniqueTags(
+      input.tags.map((tag) => tag.trim()).filter((tag) => tag.length > 0)
+    ),
   };
 }
 
-export function validateCreateLinkInput(input: CreateLinkInput): {
-  data: NormalizedCreateLinkInput | null;
-  errors: CreateLinkFieldErrors;
+export function validateLinkInput(input: LinkInput): {
+  data: NormalizedLinkInput | null;
+  errors: LinkFieldErrors;
 } {
-  const data = normalizeCreateLinkInput(input);
-  const errors: CreateLinkFieldErrors = {};
+  const data = normalizeLinkInput(input);
+  const errors: LinkFieldErrors = {};
 
   if (!data.url) {
     errors.url = "A research URL is required.";
@@ -55,6 +66,10 @@ export function validateCreateLinkInput(input: CreateLinkInput): {
     errors.category = "Choose a category.";
   } else if (!LINK_CATEGORIES.includes(data.category as LinkCategory)) {
     errors.category = "Choose one of the supported categories.";
+  }
+
+  if (data.tags.some((tag) => tag.length > 40)) {
+    errors.tags = "Keep each tag under 40 characters.";
   }
 
   return {
