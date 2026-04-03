@@ -1,6 +1,6 @@
 # ResearchVault
 
-Sprint 1 MVP for collecting research links with Next.js 16, MongoDB Atlas, and a Vercel-ready setup.
+Sprint 2 workspace for collecting, organizing, editing, and finding research links with Next.js 16, MongoDB Atlas, and a Vercel-ready setup.
 
 ## Tech Stack
 
@@ -78,7 +78,7 @@ test-research-vault/
 
 ### Frontend
 
-**Frontend developers:** Thilina, Ammaar
+**Frontend developers:** Thilina, Ammaar, Rawshan
 
 These files are primarily responsible for UI, layout, styling, client interactions, and presentation:
 
@@ -86,11 +86,16 @@ These files are primarily responsible for UI, layout, styling, client interactio
 - `src/app/layout.tsx`
 - `src/app/globals.css`
 - `src/app/favicon.ico`
+- `src/components/link-fields.tsx`
+- `src/components/link-filters.tsx`
 - `src/components/link-form.tsx`
 - `src/components/link-list.tsx`
 - `src/components/theme-provider.tsx`
+- `src/components/ui/alert-dialog.tsx`
+- `src/components/ui/badge.tsx`
 - `src/components/ui/button.tsx`
 - `src/components/ui/card.tsx`
+- `src/components/ui/dialog.tsx`
 - `src/components/ui/input.tsx`
 - `src/components/ui/label.tsx`
 - `src/components/ui/select.tsx`
@@ -104,9 +109,31 @@ These files are primarily responsible for UI, layout, styling, client interactio
 These files are primarily responsible for API handling, database connection, persistence, validation, and backend data flow:
 
 - `src/app/api/links/route.ts`
+- `src/app/api/links/[id]/route.ts`
 - `src/lib/mongodb.ts`
 - `src/lib/research-links.ts`
+- `src/lib/types.ts`
 - `src/lib/validation.ts`
+
+## Sprint 2 Modified Files
+
+These are the main Sprint 2 product files that were updated for backlog items. Shadcn support files are intentionally not listed here.
+
+### Frontend
+
+- `src/app/page.tsx` - Thilina (Add search and filter state to page URL)
+- `src/components/link-form.tsx` - Ammaar (Add tag input and tag badge display)
+- `src/components/link-fields.tsx` - Ammaar (Add tag input and tag badge display)
+- `src/components/link-filters.tsx` - Ammaar (Build search and category filter UI)
+- `src/components/link-list.tsx` - Rawshan (Build edit-link dialog flow, Build delete-link confirmation flow)
+
+### Backend
+
+- `src/app/api/links/route.ts` - Peshala (Add filtered list query support in API)
+- `src/app/api/links/[id]/route.ts` - Peshala (Add update and delete API routes for links)
+- `src/lib/research-links.ts` - Peshala (Add filtered list query support in API, Add update and delete API routes for links)
+- `src/lib/types.ts` - Thilina (Extend link types for tags and updated timestamps)
+- `src/lib/validation.ts` - Thilina (Extend link types for tags and updated timestamps)
 
 ## Available Scripts
 
