@@ -1,4 +1,11 @@
-import { LINK_CATEGORIES, type LinkInput, type LinkCategory } from "./types";
+import {
+  DEFAULT_LINK_STATUS,
+  LINK_CATEGORIES,
+  LINK_STATUSES,
+  type LinkCategory,
+  type LinkInput,
+  type LinkStatus,
+} from "./types";
 
 export type LinkFieldErrors = Partial<Record<keyof LinkInput, string>>;
 
@@ -8,6 +15,9 @@ export type NormalizedLinkInput = {
   notes: string;
   category: LinkCategory;
   tags: string[];
+  status: LinkStatus;
+  isFavorite: boolean;
+  normalizedUrl: string;
 };
 
 function uniqueTags(tags: string[]) {
@@ -25,15 +35,33 @@ function uniqueTags(tags: string[]) {
   });
 }
 
+export function normalizeUrl(value: string) {
+  try {
+    const parsedUrl = new URL(value.trim());
+    const hostname = parsedUrl.hostname.replace(/^www\./i, "").toLowerCase();
+    const pathname = parsedUrl.pathname.replace(/\/+$/, "") || "/";
+    const search = parsedUrl.searchParams.toString();
+
+    return `${hostname}${pathname.toLowerCase()}${search ? `?${search}` : ""}`;
+  } catch {
+    return value.trim().toLowerCase();
+  }
+}
+
 export function normalizeLinkInput(input: LinkInput): NormalizedLinkInput {
+  const url = input.url.trim();
+
   return {
-    url: input.url.trim(),
+    url,
     title: input.title.trim(),
     notes: input.notes.trim(),
     category: input.category.trim() as LinkCategory,
     tags: uniqueTags(
       input.tags.map((tag) => tag.trim()).filter((tag) => tag.length > 0)
     ),
+    status: (input.status.trim() || DEFAULT_LINK_STATUS) as LinkStatus,
+    isFavorite: Boolean(input.isFavorite),
+    normalizedUrl: normalizeUrl(url),
   };
 }
 
@@ -66,6 +94,12 @@ export function validateLinkInput(input: LinkInput): {
     errors.category = "Choose a category.";
   } else if (!LINK_CATEGORIES.includes(data.category as LinkCategory)) {
     errors.category = "Choose one of the supported categories.";
+  }
+
+  if (!data.status) {
+    errors.status = "Choose a reading status.";
+  } else if (!LINK_STATUSES.includes(data.status as LinkStatus)) {
+    errors.status = "Choose one of the supported reading statuses.";
   }
 
   if (data.tags.some((tag) => tag.length > 40)) {

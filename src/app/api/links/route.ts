@@ -1,5 +1,10 @@
 import { createLink, listLinks } from "@/lib/research-links";
-import type { CreateLinkInput, LinkFilters } from "@/lib/types";
+import {
+  DEFAULT_LINK_SORT,
+  DEFAULT_LINK_STATUS,
+  type CreateLinkInput,
+  type LinkFilters,
+} from "@/lib/types";
 import { validateLinkInput } from "@/lib/validation";
 
 export const dynamic = "force-dynamic";
@@ -14,6 +19,10 @@ export async function GET(request: Request) {
     search: getFilterValue(searchParams.get("search") ?? undefined),
     category: getFilterValue(searchParams.get("category") ?? undefined),
     tag: getFilterValue(searchParams.get("tag") ?? undefined),
+    status: getFilterValue(searchParams.get("status") ?? undefined),
+    favorite: getFilterValue(searchParams.get("favorite") ?? undefined),
+    sort: (getFilterValue(searchParams.get("sort") ?? undefined) ||
+      DEFAULT_LINK_SORT) as LinkFilters["sort"],
   };
 
   try {
@@ -44,6 +53,8 @@ export async function POST(request: Request) {
     notes: String(body?.notes ?? ""),
     category: String(body?.category ?? ""),
     tags: Array.isArray(body?.tags) ? body.tags.map((tag) => String(tag)) : [],
+    status: String(body?.status ?? DEFAULT_LINK_STATUS),
+    isFavorite: Boolean(body?.isFavorite),
   };
 
   const validation = validateLinkInput(input);
@@ -59,12 +70,13 @@ export async function POST(request: Request) {
   }
 
   try {
-    const link = await createLink(validation.data);
+    const { link, duplicateWarning } = await createLink(validation.data);
 
     return Response.json(
       {
         message: "Research link saved to the vault.",
         link,
+        duplicateWarning,
       },
       { status: 201 }
     );

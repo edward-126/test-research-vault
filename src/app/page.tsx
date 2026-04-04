@@ -1,8 +1,13 @@
 import { LinkFilters } from "@/components/link-filters";
 import { LinkForm } from "@/components/link-form";
 import { LinkList } from "@/components/link-list";
+import { LinkSummaryCards } from "@/components/link-summary-cards";
 import { listLinks } from "@/lib/research-links";
-import type { LinkFilters as LinkFiltersType, LinkItem } from "@/lib/types";
+import {
+  DEFAULT_LINK_SORT,
+  type LinkFilters as LinkFiltersType,
+  type LinkItem,
+} from "@/lib/types";
 
 export const dynamic = "force-dynamic";
 
@@ -20,6 +25,10 @@ export default async function Home({
     search: getSearchParamValue(resolvedSearchParams.search),
     category: getSearchParamValue(resolvedSearchParams.category),
     tag: getSearchParamValue(resolvedSearchParams.tag),
+    status: getSearchParamValue(resolvedSearchParams.status),
+    favorite: getSearchParamValue(resolvedSearchParams.favorite),
+    sort: (getSearchParamValue(resolvedSearchParams.sort) ||
+      DEFAULT_LINK_SORT) as LinkFiltersType["sort"],
   };
   let links: LinkItem[] = [];
   let setupError = "";
@@ -37,6 +46,8 @@ export default async function Home({
   return (
     <section className="relative min-h-dvh py-18 md:py-24">
       <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 px-4 md:px-6 lg:px-0">
+        <LinkSummaryCards links={links} />
+
         <div className="grid gap-6 xl:grid-cols-12 xl:items-start">
           <div className="xl:col-span-5">
             <LinkForm />

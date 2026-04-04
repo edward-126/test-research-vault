@@ -9,7 +9,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { LINK_CATEGORIES, type LinkFilters } from "@/lib/types";
+import {
+  DEFAULT_LINK_SORT,
+  LINK_CATEGORIES,
+  LINK_SORT_OPTIONS,
+  LINK_STATUSES,
+  type LinkFilters,
+} from "@/lib/types";
 import { LoaderCircle, Search, SlidersHorizontal, X } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import { startTransition, useEffect, useState } from "react";
@@ -18,6 +24,9 @@ const initialFilters: LinkFilters = {
   search: "",
   category: "",
   tag: "",
+  status: "",
+  favorite: "",
+  sort: DEFAULT_LINK_SORT,
 };
 
 export function LinkFilters({ filters }: { filters: LinkFilters }) {
@@ -31,11 +40,7 @@ export function LinkFilters({ filters }: { filters: LinkFilters }) {
   }, [filters]);
 
   useEffect(() => {
-    if (
-      values.search === filters.search &&
-      values.category === filters.category &&
-      values.tag === filters.tag
-    ) {
+    if (JSON.stringify(values) === JSON.stringify(filters)) {
       setIsPending(false);
     }
   }, [filters, values]);
@@ -53,6 +58,18 @@ export function LinkFilters({ filters }: { filters: LinkFilters }) {
 
     if (nextValues.tag.trim()) {
       params.set("tag", nextValues.tag.trim());
+    }
+
+    if (nextValues.status.trim()) {
+      params.set("status", nextValues.status.trim());
+    }
+
+    if (nextValues.favorite.trim()) {
+      params.set("favorite", nextValues.favorite.trim());
+    }
+
+    if (nextValues.sort !== DEFAULT_LINK_SORT) {
+      params.set("sort", nextValues.sort);
     }
 
     setIsPending(true);
@@ -74,20 +91,28 @@ export function LinkFilters({ filters }: { filters: LinkFilters }) {
   }
 
   const hasActiveFilters = Boolean(
-    filters.search || filters.category || filters.tag
+    filters.search ||
+    filters.category ||
+    filters.tag ||
+    filters.status ||
+    filters.favorite ||
+    filters.sort !== DEFAULT_LINK_SORT
   );
 
   return (
-    <form onSubmit={handleSubmit} className="rounded-xl border p-4">
+    <form
+      onSubmit={handleSubmit}
+      className="border-border bg-card rounded-xl border p-4"
+    >
       <div className="flex flex-col gap-4">
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h2 className="text-xl font-medium tracking-tight">
-              Find saved research faster
+              Find and prioritize research faster
             </h2>
             <p className="text-muted-foreground text-sm leading-6">
-              Search by title, notes, or tags, then narrow the vault by category
-              or a single tag.
+              Combine content filters with workflow controls to keep the Sprint
+              3 vault easier to review and demo.
             </p>
           </div>
           {hasActiveFilters ? (
@@ -103,8 +128,8 @@ export function LinkFilters({ filters }: { filters: LinkFilters }) {
           ) : null}
         </div>
 
-        <div className="grid gap-3 md:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)_minmax(0,1fr)_auto]">
-          <div className="relative">
+        <div className="grid gap-3 md:grid-cols-2">
+          <div className="relative md:col-span-2 xl:col-span-1">
             <Search className="text-muted-foreground pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2" />
             <Input
               value={values.search}
@@ -151,6 +176,67 @@ export function LinkFilters({ filters }: { filters: LinkFilters }) {
             }
             placeholder="Filter by tag"
           />
+
+          <Select
+            value={values.status || "all"}
+            onValueChange={(value) =>
+              setValues((current) => ({
+                ...current,
+                status: value === "all" ? "" : value,
+              }))
+            }
+          >
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="All statuses" />
+            </SelectTrigger>
+            <SelectContent position="popper">
+              <SelectItem value="all">All statuses</SelectItem>
+              {LINK_STATUSES.map((status) => (
+                <SelectItem key={status} value={status}>
+                  {status}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          <Select
+            value={values.favorite || "all"}
+            onValueChange={(value) =>
+              setValues((current) => ({
+                ...current,
+                favorite: value === "all" ? "" : value,
+              }))
+            }
+          >
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="All items" />
+            </SelectTrigger>
+            <SelectContent position="popper">
+              <SelectItem value="all">All items</SelectItem>
+              <SelectItem value="true">Favorites only</SelectItem>
+            </SelectContent>
+          </Select>
+
+          <Select
+            value={values.sort}
+            onValueChange={(value) =>
+              setValues((current) => ({
+                ...current,
+                sort: value as LinkFilters["sort"],
+              }))
+            }
+          >
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="Sort by" />
+            </SelectTrigger>
+            <SelectContent position="popper">
+              {LINK_SORT_OPTIONS.map((option) => (
+                <SelectItem key={option.value} value={option.value}>
+                  {option.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
 
           <Button type="submit" size="lg" disabled={isPending}>
             {isPending ? (

@@ -37,7 +37,7 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <body
         className={cn(
-          "bg-background text-foreground relative h-full font-sans antialiased",
+          "bg-background text-foreground dark relative h-full font-sans antialiased",
           geistSans.variable,
           geistMono.variable
         )}
