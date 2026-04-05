@@ -35,13 +35,27 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import type { LinkFilters, LinkItem, UpdateLinkInput } from "@/lib/types";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  LINK_STATUSES,
+  type LinkFilters,
+  type LinkItem,
+  type LinkStatus,
+  type UpdateLinkInput,
+} from "@/lib/types";
 import { cn } from "@/lib/utils";
 import {
   ExternalLink,
   FilePenLine,
   FolderKanban,
   LoaderCircle,
+  Star,
   Tag,
   Trash2,
 } from "lucide-react";
@@ -64,6 +78,7 @@ function buildEditorValues(link: LinkItem): LinkFieldValues {
     category: link.category,
     tagsInput: formatTagsInput(link.tags),
     tags: link.tags,
+    status: link.status,
   };
 }
 
@@ -82,7 +97,34 @@ function buildFilterHref(pathname: string, filters: LinkFilters) {
     params.set("tag", filters.tag.trim());
   }
 
+  if (filters.status.trim()) {
+    params.set("status", filters.status.trim());
+  }
+
+  if (filters.favorite.trim()) {
+    params.set("favorite", filters.favorite.trim());
+  }
+
+  if (filters.sort !== "newest") {
+    params.set("sort", filters.sort);
+  }
+
   return params.toString() ? `${pathname}?${params.toString()}` : pathname;
+}
+
+function buildUpdatePayload(
+  link: LinkItem,
+  overrides: Partial<UpdateLinkInput>
+): UpdateLinkInput {
+  return {
+    url: overrides.url ?? link.url,
+    title: overrides.title ?? link.title,
+    notes: overrides.notes ?? link.notes,
+    category: overrides.category ?? link.category,
+    tags: overrides.tags ?? link.tags,
+    status: overrides.status ?? link.status,
+    isFavorite: overrides.isFavorite ?? link.isFavorite,
+  };
 }
 
 export function LinkList({
@@ -106,13 +148,19 @@ export function LinkList({
     "idle" | "success" | "error"
   >("idle");
   const [isSaving, setIsSaving] = useState(false);
-  const [isDeletingId, setIsDeletingId] = useState("");
+  const [busyLinkId, setBusyLinkId] = useState("");
   const router = useRouter();
   const pathname = usePathname();
 
   function setMessage(status: "success" | "error", message: string) {
     setActionStatus(status);
     setActionMessage(message);
+  }
+
+  function refreshList() {
+    startTransition(() => {
+      router.refresh();
+    });
   }
 
   function updateFilter(nextFilters: LinkFilters) {
@@ -126,6 +174,9 @@ export function LinkList({
       search: "",
       category: "",
       tag: "",
+      status: "",
+      favorite: "",
+      sort: "newest",
     });
   }
 
@@ -174,6 +225,23 @@ export function LinkList({
     });
   }
 
+  async function patchLink(link: LinkItem, payload: UpdateLinkInput) {
+    const response = await fetch(`/api/links/${link.id}`, {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(payload),
+    });
+
+    const data = (await response.json()) as {
+      message?: string;
+      fieldErrors?: Partial<Record<keyof UpdateLinkInput, string>>;
+    };
+
+    return { response, data };
+  }
+
   async function handleSave(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
@@ -183,27 +251,17 @@ export function LinkList({
 
     setIsSaving(true);
 
-    const payload: UpdateLinkInput = {
+    const payload = buildUpdatePayload(editingLink, {
       url: editorValues.url,
       title: editorValues.title,
       notes: editorValues.notes,
       category: editorValues.category,
       tags: editorValues.tags,
-    };
+      status: editorValues.status,
+    });
 
     try {
-      const response = await fetch(`/api/links/${editingLink.id}`, {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(payload),
-      });
-
-      const data = (await response.json()) as {
-        message?: string;
-        fieldErrors?: Partial<Record<keyof UpdateLinkInput, string>>;
-      };
+      const { response, data } = await patchLink(editingLink, payload);
 
       if (!response.ok) {
         setEditErrors(data.fieldErrors ?? {});
@@ -218,9 +276,7 @@ export function LinkList({
       setEditorValues(null);
       setEditErrors({});
       setMessage("success", data.message ?? "Research link updated.");
-      startTransition(() => {
-        router.refresh();
-      });
+      refreshList();
     } catch (error) {
       console.error("Failed to update link from list", error);
       setMessage("error", "The link could not be updated right now.");
@@ -229,8 +285,69 @@ export function LinkList({
     }
   }
 
+  async function handleFavoriteToggle(link: LinkItem) {
+    setBusyLinkId(link.id);
+
+    try {
+      const { response, data } = await patchLink(
+        link,
+        buildUpdatePayload(link, {
+          isFavorite: !link.isFavorite,
+        })
+      );
+
+      if (!response.ok) {
+        setMessage(
+          "error",
+          data.message ?? "The favorite state could not be updated."
+        );
+        return;
+      }
+
+      setMessage(
+        "success",
+        link.isFavorite ? "Removed from favorites." : "Added to favorites."
+      );
+      refreshList();
+    } catch (error) {
+      console.error("Failed to toggle favorite", error);
+      setMessage("error", "The favorite state could not be updated.");
+    } finally {
+      setBusyLinkId("");
+    }
+  }
+
+  async function handleStatusChange(link: LinkItem, status: LinkStatus) {
+    setBusyLinkId(link.id);
+
+    try {
+      const { response, data } = await patchLink(
+        link,
+        buildUpdatePayload(link, {
+          status,
+        })
+      );
+
+      if (!response.ok) {
+        setMessage(
+          "error",
+          data.message ?? "The reading status could not be updated."
+        );
+        return;
+      }
+
+      setMessage("success", `Status updated to ${status}.`);
+      refreshList();
+    } catch (error) {
+      console.error("Failed to update status", error);
+      setMessage("error", "The reading status could not be updated.");
+    } finally {
+      setBusyLinkId("");
+    }
+  }
+
   async function handleDelete(link: LinkItem) {
-    setIsDeletingId(link.id);
+    setBusyLinkId(link.id);
 
     try {
       const response = await fetch(`/api/links/${link.id}`, {
@@ -248,19 +365,22 @@ export function LinkList({
       }
 
       setMessage("success", data.message ?? "Research link deleted.");
-      startTransition(() => {
-        router.refresh();
-      });
+      refreshList();
     } catch (error) {
       console.error("Failed to delete link from list", error);
       setMessage("error", "The link could not be deleted right now.");
     } finally {
-      setIsDeletingId("");
+      setBusyLinkId("");
     }
   }
 
   const hasActiveFilters = Boolean(
-    filters.search || filters.category || filters.tag
+    filters.search ||
+    filters.category ||
+    filters.tag ||
+    filters.status ||
+    filters.favorite ||
+    filters.sort !== "newest"
   );
 
   if (setupError) {
@@ -298,12 +418,12 @@ export function LinkList({
               <span className="text-primary dark:text-chart-2">
                 {links.length}
               </span>{" "}
-              {links.length === 1 ? "item" : "items"} captured)
+              {links.length === 1 ? "item" : "items"} visible)
             </small>
           </CardTitle>
           <CardDescription className="mt-1 leading-6">
-            Manage saved sources, refine the list with filters, and keep the
-            Sprint 2 walkthrough easy to follow.
+            Favorites, reading status, and sort order now work with the same
+            filtered vault view.
           </CardDescription>
         </div>
       </CardHeader>
@@ -326,12 +446,12 @@ export function LinkList({
           <div className="rounded-[28px] border border-dashed px-5 py-10 text-center">
             <h3 className="text-lg font-semibold text-slate-950 dark:text-slate-50">
               {hasActiveFilters
-                ? "No links match these filters"
+                ? "No links match these workflow filters"
                 : "No research links yet"}
             </h3>
             <p className="mx-auto mt-3 max-w-xl text-sm leading-6 text-slate-600 dark:text-slate-300">
               {hasActiveFilters
-                ? "Try clearing the active filters or use a broader search to surface more results."
+                ? "Try resetting the status, favorite, or sorting controls to widen the result set."
                 : "Add the first article, dataset, or tool above to start building the shared research vault."}
             </p>
             {hasActiveFilters ? (
@@ -360,6 +480,21 @@ export function LinkList({
                           <FolderKanban className="size-3.5" />
                           {link.category}
                         </span>
+                        <Badge
+                          variant={
+                            link.status === "Important"
+                              ? "default"
+                              : "secondary"
+                          }
+                        >
+                          {link.status}
+                        </Badge>
+                        {link.isFavorite ? (
+                          <Badge variant="outline" className="gap-1">
+                            <Star className="size-3 fill-current" />
+                            Favorite
+                          </Badge>
+                        ) : null}
                         <span className="text-muted-foreground text-xs tracking-tighter">
                           Added {formatTimestamp(link.createdAt)}
                         </span>
@@ -428,6 +563,46 @@ export function LinkList({
                           })}
                         </div>
                       ) : null}
+
+                      <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:items-center">
+                        <Button
+                          type="button"
+                          variant={link.isFavorite ? "default" : "outline"}
+                          size="sm"
+                          onClick={() => handleFavoriteToggle(link)}
+                          disabled={busyLinkId === link.id}
+                        >
+                          {busyLinkId === link.id ? (
+                            <LoaderCircle className="animate-spin" />
+                          ) : (
+                            <Star
+                              className={cn(
+                                link.isFavorite ? "fill-current" : ""
+                              )}
+                            />
+                          )}
+                          {link.isFavorite ? "Favorited" : "Mark Favorite"}
+                        </Button>
+
+                        <Select
+                          value={link.status}
+                          onValueChange={(value) =>
+                            handleStatusChange(link, value as LinkStatus)
+                          }
+                          disabled={busyLinkId === link.id}
+                        >
+                          <SelectTrigger className="w-full sm:max-w-44">
+                            <SelectValue placeholder="Reading status" />
+                          </SelectTrigger>
+                          <SelectContent position="popper">
+                            {LINK_STATUSES.map((status) => (
+                              <SelectItem key={status} value={status}>
+                                {status}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
                     </div>
 
                     <div className="flex shrink-0 items-center gap-2 lg:flex-col">
@@ -450,8 +625,8 @@ export function LinkList({
                           <DialogHeader>
                             <DialogTitle>Edit research link</DialogTitle>
                             <DialogDescription>
-                              Update the source details, notes, category, or
-                              tags without losing the original capture date.
+                              Update the source details, tags, and reading
+                              status without losing the workflow history.
                             </DialogDescription>
                           </DialogHeader>
 
@@ -467,6 +642,10 @@ export function LinkList({
                                 onCategoryChange={(value) =>
                                   updateEditorValue("category", value)
                                 }
+                                onStatusChange={(value) =>
+                                  updateEditorValue("status", value)
+                                }
+                                showStatus
                               />
                               <DialogFooter className="border-border border-t pt-4">
                                 <Button
@@ -514,9 +693,9 @@ export function LinkList({
                             <AlertDialogAction
                               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                               onClick={() => handleDelete(link)}
-                              disabled={isDeletingId === link.id}
+                              disabled={busyLinkId === link.id}
                             >
-                              {isDeletingId === link.id ? (
+                              {busyLinkId === link.id ? (
                                 <>
                                   <LoaderCircle className="animate-spin" />
                                   Deleting

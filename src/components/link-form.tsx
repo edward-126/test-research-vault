@@ -7,23 +7,29 @@ import {
 } from "@/components/link-fields";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import type { CreateLinkInput } from "@/lib/types";
+import {
+  DEFAULT_LINK_STATUS,
+  type CreateLinkInput,
+  type DuplicateWarning,
+} from "@/lib/types";
 import { cn } from "@/lib/utils";
-import { LoaderCircle, Plus } from "lucide-react";
+import { AlertTriangle, LoaderCircle, Plus } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { startTransition, useState } from "react";
 
 type FormState = {
-  status: "idle" | "success" | "error";
+  status: "idle" | "success" | "warning" | "error";
   message: string;
   fieldErrors: Partial<Record<keyof CreateLinkInput, string>>;
   values: LinkFieldValues;
+  duplicateWarning: DuplicateWarning | null;
 };
 
 const initialFormState: FormState = {
   status: "idle",
   message: "",
   fieldErrors: {},
+  duplicateWarning: null,
   values: {
     url: "",
     title: "",
@@ -31,6 +37,7 @@ const initialFormState: FormState = {
     category: "",
     tagsInput: "",
     tags: [],
+    status: DEFAULT_LINK_STATUS,
   },
 };
 
@@ -63,8 +70,15 @@ export function LinkForm() {
 
       return {
         ...current,
-        status: current.status === "success" ? "idle" : current.status,
-        message: current.status === "success" ? "" : current.message,
+        status:
+          current.status === "success" || current.status === "warning"
+            ? "idle"
+            : current.status,
+        message:
+          current.status === "success" || current.status === "warning"
+            ? ""
+            : current.message,
+        duplicateWarning: null,
         fieldErrors: nextFieldErrors,
         values: nextValues,
       };
@@ -80,6 +94,8 @@ export function LinkForm() {
       notes: state.values.notes,
       category: state.values.category,
       tags: state.values.tags,
+      status: state.values.status,
+      isFavorite: false,
     };
 
     setIsPending(true);
@@ -96,6 +112,7 @@ export function LinkForm() {
       const data = (await response.json()) as {
         message?: string;
         fieldErrors?: FormState["fieldErrors"];
+        duplicateWarning?: DuplicateWarning;
       };
 
       if (!response.ok) {
@@ -104,6 +121,7 @@ export function LinkForm() {
           status: "error",
           message:
             data.message ?? "Please fix the highlighted fields and try again.",
+          duplicateWarning: null,
           fieldErrors: data.fieldErrors ?? {},
         }));
         return;
@@ -111,8 +129,11 @@ export function LinkForm() {
 
       setState({
         ...initialFormState,
-        status: "success",
-        message: data.message ?? "Research link saved to the vault.",
+        status: data.duplicateWarning ? "warning" : "success",
+        message: data.duplicateWarning
+          ? data.duplicateWarning.message
+          : (data.message ?? "Research link saved to the vault."),
+        duplicateWarning: data.duplicateWarning ?? null,
       });
       startTransition(() => {
         router.refresh();
@@ -125,6 +146,7 @@ export function LinkForm() {
         status: "error",
         message:
           "The link could not be saved right now. Check your connection and try again.",
+        duplicateWarning: null,
         fieldErrors: {},
       }));
     } finally {
@@ -139,8 +161,8 @@ export function LinkForm() {
           Capture a research link
         </CardTitle>
         <p className="text-muted-foreground max-w-2xl text-sm leading-6">
-          Save the source, add quick notes, tags, and category details so the
-          team can organize research from the start.
+          Save the source, keep the default reading status in place, and surface
+          duplicate warnings before the vault gets noisy.
         </p>
       </CardHeader>
 
@@ -156,12 +178,31 @@ export function LinkForm() {
             onCategoryChange={(value) => updateValue("category", value)}
           />
 
+          {state.duplicateWarning ? (
+            <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900 dark:border-amber-500/30 dark:bg-amber-950/30 dark:text-amber-100">
+              <div className="flex items-start gap-2">
+                <AlertTriangle className="mt-0.5 size-4 shrink-0" />
+                <div className="space-y-1">
+                  <p className="font-medium">
+                    {state.duplicateWarning.message}
+                  </p>
+                  <p className="text-xs leading-5 text-amber-800 dark:text-amber-200">
+                    Existing item: {state.duplicateWarning.existingLink.title} (
+                    {state.duplicateWarning.existingLink.status})
+                  </p>
+                </div>
+              </div>
+            </div>
+          ) : null}
+
           <div className="border-border flex flex-col gap-3 border-t pt-5 sm:flex-row sm:items-center sm:justify-between">
             <div
               className={cn(
                 "rounded-lg px-1.5 py-1 text-sm",
                 state.status === "success" &&
                   "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300",
+                state.status === "warning" &&
+                  "bg-amber-50 text-amber-800 dark:bg-amber-950/40 dark:text-amber-200",
                 state.status === "error" &&
                   "bg-destructive/10 text-destructive",
                 state.status === "idle" && "bg-muted text-muted-foreground"

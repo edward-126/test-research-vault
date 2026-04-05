@@ -1,5 +1,5 @@
 import { deleteLink, isValidLinkId, updateLink } from "@/lib/research-links";
-import type { UpdateLinkInput } from "@/lib/types";
+import { DEFAULT_LINK_STATUS, type UpdateLinkInput } from "@/lib/types";
 import { validateLinkInput } from "@/lib/validation";
 
 export const dynamic = "force-dynamic";
@@ -36,6 +36,8 @@ export async function PATCH(request: Request, context: RouteContext) {
     notes: String(body?.notes ?? ""),
     category: String(body?.category ?? ""),
     tags: Array.isArray(body?.tags) ? body.tags.map((tag) => String(tag)) : [],
+    status: String(body?.status ?? DEFAULT_LINK_STATUS),
+    isFavorite: Boolean(body?.isFavorite),
   };
 
   const validation = validateLinkInput(input);

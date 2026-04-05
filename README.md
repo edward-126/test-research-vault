@@ -1,6 +1,6 @@
 # ResearchVault
 
-Sprint 2 workspace for collecting, organizing, editing, and finding research links with Next.js 16, MongoDB Atlas, and a Vercel-ready setup.
+Sprint 3 workspace for collecting, organizing, prioritizing, and reviewing research links with Next.js 16, MongoDB Atlas, and a Vercel-ready setup.
 
 ## Tech Stack
 
@@ -134,6 +134,29 @@ These are the main Sprint 2 product files that were updated for backlog items. S
 - `src/lib/research-links.ts` - Peshala (Add filtered list query support in API, Add update and delete API routes for links)
 - `src/lib/types.ts` - Thilina (Extend link types for tags and updated timestamps)
 - `src/lib/validation.ts` - Thilina (Extend link types for tags and updated timestamps)
+
+## Sprint 3 Modified Files
+
+These are the main Sprint 3 product files that were updated for backlog items. Shadcn support files are intentionally not listed here.
+
+### Frontend
+
+- `src/app/page.tsx` - Ammaar (Add URL state for status, favorite, and sort)
+- `src/components/link-form.tsx` - Thilina (Add duplicate warning flow in the create form)
+- `src/components/link-fields.tsx` - Rawshan (Build reading-status selector flow)
+- `src/components/link-filters.tsx` - Thilina (Build sorting and workflow filter UI)
+- `src/components/link-list.tsx` - Rawshan (Build favorite toggle interaction, Build reading-status selector flow)
+- `src/components/link-summary-cards.tsx` - Rawshan (Add dashboard summary cards)
+
+### Backend
+
+- `src/app/api/links/route.ts` - Peshala (Add duplicate detection and sort/filter support in API)
+- `src/app/api/links/[id]/route.ts` - Peshala (Extend update route for workflow actions)
+- `src/lib/research-links.ts` - Peshala (Add duplicate detection and sort/filter support in API, Extend update route for workflow actions)
+
+### Documentation
+
+- `README.md` - Thilina (Refresh README ownership and modified-files notes)
 
 ## Available Scripts
 

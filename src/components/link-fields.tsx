@@ -9,7 +9,12 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { LINK_CATEGORIES, type LinkInput } from "@/lib/types";
+import {
+  LINK_CATEGORIES,
+  LINK_STATUSES,
+  type LinkInput,
+  type LinkStatus,
+} from "@/lib/types";
 
 export type LinkFieldValues = {
   url: string;
@@ -18,6 +23,7 @@ export type LinkFieldValues = {
   category: string;
   tagsInput: string;
   tags: string[];
+  status: LinkStatus;
 };
 
 export type LinkFieldErrors = Partial<Record<keyof LinkInput, string>>;
@@ -71,11 +77,15 @@ export function LinkFields({
   errors,
   onValueChange,
   onCategoryChange,
+  onStatusChange,
+  showStatus = false,
 }: {
   values: LinkFieldValues;
   errors: LinkFieldErrors;
   onValueChange: (field: keyof LinkFieldValues, value: string) => void;
   onCategoryChange: (value: string) => void;
+  onStatusChange?: (value: LinkStatus) => void;
+  showStatus?: boolean;
 }) {
   return (
     <>
@@ -91,7 +101,7 @@ export function LinkFields({
       </Field>
 
       <div className="grid gap-5 md:grid-cols-5">
-        <div className="md:col-span-3">
+        <div className={showStatus ? "md:col-span-2" : "md:col-span-3"}>
           <Field htmlFor="title" label="Title" error={errors.title}>
             <Input
               id="title"
@@ -104,7 +114,7 @@ export function LinkFields({
           </Field>
         </div>
 
-        <div className="md:col-span-2">
+        <div className={showStatus ? "md:col-span-2" : "md:col-span-2"}>
           <Field htmlFor="category" label="Category" error={errors.category}>
             <Select value={values.category} onValueChange={onCategoryChange}>
               <SelectTrigger
@@ -124,6 +134,32 @@ export function LinkFields({
             </Select>
           </Field>
         </div>
+
+        {showStatus ? (
+          <div className="md:col-span-1">
+            <Field htmlFor="status" label="Status" error={errors.status}>
+              <Select
+                value={values.status}
+                onValueChange={(value) => onStatusChange?.(value as LinkStatus)}
+              >
+                <SelectTrigger
+                  id="status"
+                  className="w-full"
+                  aria-invalid={Boolean(errors.status)}
+                >
+                  <SelectValue placeholder="Choose a status" />
+                </SelectTrigger>
+                <SelectContent position="popper">
+                  {LINK_STATUSES.map((status) => (
+                    <SelectItem key={status} value={status}>
+                      {status}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </Field>
+          </div>
+        ) : null}
       </div>
 
       <Field htmlFor="notes" label="Notes" error={errors.notes}>
